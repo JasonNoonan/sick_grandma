@@ -1,13 +1,80 @@
 defmodule SickGrandma.Logger do
   @moduledoc """
-  Module responsible for writing ETS dump data to log files.
+  Handles formatting and writing ETS dump data to structured log files.
 
-  Creates log files in ~/.sick_grandma/logs/ directory.
+  ## Overview
+
+  `SickGrandma.Logger` is responsible for taking raw ETS data and metadata from 
+  `ETSDumper` and converting it into human-readable, well-formatted log files. 
+  It manages file system operations, directory creation, and output formatting.
+
+  ## File Organization
+
+  All log files are created in a standardized directory structure:
+
+      ~/.sick_grandma/
+      └── logs/
+          ├── ets_dump_2024-01-15T10-30-45-123456Z.log      # Full dumps
+          ├── ets_table_my_cache_2024-01-15T10-30-45-123456Z.log  # Single table
+          └── ets_table_8207_2024-01-15T10-30-45-123456Z.log      # Table by ID
+
+  ## Log Format
+
+  Each log file contains:
+
+  - **Header**: Timestamp, operation type, summary information
+  - **Table Metadata**: ID, name, type, size, memory usage, ownership
+  - **Data Section**: Formatted table contents (limited to prevent huge files)
+  - **Footer**: End markers and additional metadata
+
+  ## Data Formatting Features
+
+  - **Truncation**: Large tables limited to first 100 entries
+  - **Pretty Printing**: Elixir terms formatted with proper indentation
+  - **Error Handling**: Clear error messages for inaccessible data
+  - **Metadata**: Rich context about each table's properties
+
+  ## File Safety
+
+  - **Atomic Writes**: Files written completely or not at all
+  - **Unique Names**: Timestamp-based naming prevents conflicts
+  - **Directory Creation**: Automatically creates required directories
+  - **Error Recovery**: Detailed error reporting for file system issues
+
+  ## Configuration
+
+  The module uses compile-time constants for directory structure:
+
+  - `@log_dir_name` - Base directory name (`.sick_grandma`)
+  - `@logs_subdir` - Subdirectory for log files (`logs`)
+
+  ## Performance Considerations
+
+  - **Memory Efficient**: Streams large data sets when possible
+  - **I/O Optimization**: Batches file operations
+  - **Size Limits**: Prevents runaway log file sizes
+  - **Concurrent Safe**: Multiple processes can write simultaneously
+
+  ## Error Handling
+
+  File system errors are wrapped with context:
+
+  - `{:mkdir_failed, reason}` - Directory creation failed
+  - `{:write_failed, reason}` - File writing failed
+
+  ## See Also
+
+  - `SickGrandma.ETSDumper` - Data source for logging operations
+  - `SickGrandma` - Main API that coordinates dumping and logging
   """
 
   @log_dir_name ".sick_grandma"
   @logs_subdir "logs"
 
+  @type dump_data :: SickGrandma.ETSDumper.dump_data()
+  @type table_info :: SickGrandma.table_info()
+
+  @spec write_dump(dump_data()) :: :ok | {:error, term()}
   @doc """
   Writes a complete ETS dump to a timestamped log file.
 
@@ -24,6 +91,7 @@ defmodule SickGrandma.Logger do
     end
   end
 
+  @spec write_table_dump(atom() | integer(), table_info()) :: :ok | {:error, term()}
   @doc """
   Writes a single table dump to a log file.
   """
@@ -38,6 +106,7 @@ defmodule SickGrandma.Logger do
     end
   end
 
+  @spec log_directory_path() :: String.t()
   @doc """
   Returns the path to the log directory.
   """

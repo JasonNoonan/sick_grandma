@@ -1,11 +1,70 @@
 defmodule SickGrandma.ETSDumper do
   @moduledoc """
-  Module responsible for discovering and dumping ETS table data.
+  Core module responsible for ETS table discovery and data extraction.
 
-  Follows the "let it crash" philosophy - if ETS operations fail,
-  the process will crash and be restarted by its supervisor.
+  ## Overview
+
+  `ETSDumper` handles the low-level operations of interacting with the ETS system,
+  including table discovery, metadata extraction, and data dumping. It implements
+  safe access patterns and graceful error handling for common ETS edge cases.
+
+  ## Design Philosophy
+
+  This module follows Elixir's "let it crash" philosophy for system-level failures
+  while gracefully handling expected operational errors:
+
+  - **System failures** (ETS unavailable) → crash and let supervisor restart
+  - **Operational errors** (table deleted, access denied) → return error tuples
+  - **Data safety** → never modify tables, only read operations
+
+  ## Key Features
+
+  - **Safe Discovery**: Handles tables that disappear during enumeration
+  - **Permission Handling**: Respects table protection levels
+  - **Metadata Extraction**: Captures comprehensive table information
+  - **Concurrent Safety**: Handles tables modified during dumping
+  - **Memory Efficiency**: Processes tables individually to manage memory usage
+
+  ## Table Access Patterns
+
+  The module handles different ETS table protection levels:
+
+  - **Public**: Full read access to data and metadata
+  - **Protected**: Read access if owned by current process or inherited
+  - **Private**: Metadata only, data access denied
+
+  ## Error Recovery
+
+  Common scenarios handled gracefully:
+
+  - Tables deleted between discovery and access
+  - Permission changes during operation
+  - Concurrent modifications to table structure
+  - Large tables that might cause memory pressure
+
+  ## Internal Architecture
+
+  The module uses a pipeline approach:
+
+  1. **Discovery** → `discover_tables/0`
+  2. **Metadata** → `get_table_info/1` 
+  3. **Data Extraction** → `dump_single_table/1`
+  4. **Safety Checks** → `safe_tab2list/1`
+
+  ## See Also
+
+  - `SickGrandma` - Main API module
+  - `SickGrandma.Logger` - Output formatting and file operations
   """
 
+  @type table_info :: SickGrandma.table_info()
+  @type dump_data :: %{
+          timestamp: DateTime.t(),
+          total_tables: non_neg_integer(),
+          tables: [table_info()]
+        }
+
+  @spec discover_tables() :: {:ok, [table_info()]}
   @doc """
   Discovers all ETS tables currently running in the system.
 
@@ -21,6 +80,7 @@ defmodule SickGrandma.ETSDumper do
     {:ok, tables}
   end
 
+  @spec dump_tables([table_info()]) :: {:ok, dump_data()}
   @doc """
   Dumps data from multiple ETS tables.
 
@@ -39,6 +99,7 @@ defmodule SickGrandma.ETSDumper do
     {:ok, dump_data}
   end
 
+  @spec dump_table(atom() | integer()) :: {:ok, table_info()} | {:error, :table_not_found}
   @doc """
   Dumps data from a single ETS table by name or ID.
 
