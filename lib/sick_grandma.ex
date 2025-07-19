@@ -50,6 +50,7 @@ defmodule SickGrandma do
          :ok <- Logger.write_table_dump(table_name_or_id, data) do
       :ok
     else
+      {:error, :table_not_found} -> {:error, :table_not_found}
       {:error, reason} -> {:error, reason}
     end
   end
@@ -58,11 +59,9 @@ defmodule SickGrandma do
   Lists all discoverable ETS tables.
 
   Returns a list of table information maps.
+  Will crash if ETS system is unavailable.
   """
   def list_tables do
-    case ETSDumper.discover_tables() do
-      {:ok, tables} -> {:ok, tables}
-      {:error, reason} -> {:error, reason}
-    end
+    ETSDumper.discover_tables()
   end
 end

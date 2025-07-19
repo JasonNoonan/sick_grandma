@@ -56,6 +56,6 @@ defmodule SickGrandma.ETSDumperTest do
 
   test "returns error for non-existent table" do
     result = ETSDumper.dump_table(:non_existent_table)
-    assert {:error, {:table_not_found, :non_existent_table}} = result
+    assert {:error, :table_not_found} = result
   end
 end

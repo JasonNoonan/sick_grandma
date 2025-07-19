@@ -86,50 +86,42 @@ defmodule SickGrandma.Logger do
   defp sanitize_table_name(name), do: inspect(name)
 
   defp format_dump_content(dump_data) do
-    try do
-      content = """
-      ================================================================================
-      SickGrandma ETS Dump Report
-      ================================================================================
-      Timestamp: #{DateTime.to_iso8601(dump_data.timestamp)}
-      Total Tables: #{dump_data.total_tables}
-      ================================================================================
+    content = """
+    ================================================================================
+    SickGrandma ETS Dump Report
+    ================================================================================
+    Timestamp: #{DateTime.to_iso8601(dump_data.timestamp)}
+    Total Tables: #{dump_data.total_tables}
+    ================================================================================
 
-      #{format_tables_content(dump_data.tables)}
+    #{format_tables_content(dump_data.tables)}
 
-      ================================================================================
-      End of Dump
-      ================================================================================
-      """
+    ================================================================================
+    End of Dump
+    ================================================================================
+    """
 
-      {:ok, content}
-    rescue
-      error -> {:error, {:format_failed, error}}
-    end
+    {:ok, content}
   end
 
   defp format_table_content(table_data) do
-    try do
-      content = """
-      ================================================================================
-      SickGrandma Single Table Dump
-      ================================================================================
-      Timestamp: #{DateTime.to_iso8601(DateTime.utc_now())}
-      Table ID: #{table_data.id}
-      Table Name: #{inspect(table_data.name)}
-      ================================================================================
+    content = """
+    ================================================================================
+    SickGrandma Single Table Dump
+    ================================================================================
+    Timestamp: #{DateTime.to_iso8601(DateTime.utc_now())}
+    Table ID: #{table_data.id}
+    Table Name: #{inspect(table_data.name)}
+    ================================================================================
 
-      #{format_single_table(table_data)}
+    #{format_single_table(table_data)}
 
-      ================================================================================
-      End of Table Dump
-      ================================================================================
-      """
+    ================================================================================
+    End of Table Dump
+    ================================================================================
+    """
 
-      {:ok, content}
-    rescue
-      error -> {:error, {:format_failed, error}}
-    end
+    {:ok, content}
   end
 
   defp format_tables_content(tables) do
